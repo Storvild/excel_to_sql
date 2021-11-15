@@ -144,6 +144,7 @@ def get_datatype(fieldname: str, columns: list, fieldvalue: str) -> str:
 def to_sql_file(filename: str,
                 data_list: list,
                 columns: list,
+                ext_columns: list,
                 setzero: bool = True,
                 prev_block='',    # Блок после WITH data
                 insert_block='',  # Блок с INSERT INTO
@@ -203,7 +204,7 @@ def to_sql_file(filename: str,
         else:
             content += '\n\n/*\nINSERT INTO {} ('.format(tablename)
             i = 0
-            for field in EXT_COLUMNS:  # Доп.поля из EXT_COLUMNS
+            for field in ext_columns:  # Доп.поля из EXT_COLUMNS
                 line = '\n    '
                 if i > 0:
                     line += ', '
@@ -243,7 +244,7 @@ def to_sql_file(filename: str,
                     content += '\n    '
                     if i > 0:
                         content += ', '
-                    content += 'CAST(m.{0} AS {1}) AS {0}'.format(field, get_datatype(field, COLUMNS, data_list[0][field]))
+                    content += 'CAST(m.{0} AS {1}) AS {0}'.format(field, get_datatype(field, columns, data_list[0][field]))
                     i += 1
             # content += '    {}'.format('\n    , '.join(['CAST(m.{0} AS {1}) AS {0}'.format(x, get_datatype(x, COLUMNS)) for x in data_list[0].keys()]))
             content += '\nFROM data AS m\n--*/\n'
@@ -265,7 +266,7 @@ def main():
         for filename in filenames:
             outfile = os.path.splitext(filename)[0] + '.sql'
             data_list = get_data(filename, COLUMNS, START_ROWNUM, sheet_name='')
-            to_sql_file(outfile, data_list, COLUMNS, setzero=True, tablename='tablename')
+            to_sql_file(outfile, data_list, columns=COLUMNS, ext_columns=EXT_COLUMNS, setzero=True, tablename='tablename')
             print('Результирующий файл записан: {}'.format(outfile))
         print('Обработка успешно завершена')
         # input()
