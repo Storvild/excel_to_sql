@@ -1,5 +1,5 @@
 """
-Создание скрипта SQL из Excel файла
+Создание скрипта SQL из Excel, OpenOffice файла
 
     python example.py "Путь к файлу 1.xlsx"
 
@@ -7,7 +7,7 @@
 import os
 
 SHEET_NAME = ''        # Имя листа с данными. Если не указано, то берется первый
-START_ROWNUM = 1       # Начинать обработку с 5й строки Excel
+START_ROWNUM = 2       # Начинать обработку с 2-й строки Excel
 EMPTY_BREAK_COL = 'A'  # При встрече пустого значения в колонке A, прерывать обработку
 
 COLUMNS = [
