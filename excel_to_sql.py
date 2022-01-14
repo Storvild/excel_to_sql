@@ -181,6 +181,8 @@ def to_sql_file(filename: str,
                 # Если значение числовое, то записывать без кавычек
                 elif fieldtype in ('int4', 'integer', 'float8', 'btk_money', 'numeric'):
                     line += '{}'.format(rec[field])
+                elif type(rec[field]) == bool:
+                    line += 'True' if rec[field] else 'False'
                 else:
                     line += "'{}'".format(rec[field])
             line += ')'
