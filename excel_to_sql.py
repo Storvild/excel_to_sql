@@ -112,7 +112,7 @@ def get_data(filepath: str, columns: list, start_rownum: int, sheet_name=SHEET_N
                 if empty_break_col:
                     if str(sheet['{}{}'.format(empty_break_col, rownum)]).strip() == '':
                         break
-                rec['nn'] = rownum
+                rec['row_num'] = rownum
                 for column in columns:
                     #print(column['fieldname'], column['colname'])
                     try:
@@ -183,6 +183,8 @@ def to_sql_file(filename: str,
                     line += '{}'.format(rec[field])
                 elif type(rec[field]) == bool:
                     line += 'True' if rec[field] else 'False'
+                #elif type(rec[field]) in (int, float):
+                #    line += '{}'.format(rec[field])
                 else:
                     line += "'{}'".format(rec[field])
             line += ')'
