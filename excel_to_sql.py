@@ -66,7 +66,7 @@ WORKDIR = os.path.join(curdir, '')
 list_files = glob.glob(os.path.join(WORKDIR, '*.*'))
 
 
-def get_filenames():
+def get_filenames(workdir=WORKDIR):
     """ Получение списка файлов
         Список файлов можно передать в виде параметров скрипта
         Если в параметрах файлы не указаны, берутся все из директории скрипта
@@ -79,7 +79,7 @@ def get_filenames():
 
     if not filenames:
         import glob
-        filenames = glob.glob(os.path.join(WORKDIR, '*.*'))
+        filenames = glob.glob(os.path.join(workdir, '*.*'))
         filenames = [x for x in filenames if os.path.splitext(x)[1] in ('.xls', '.xlsx', '.ods')]  # Ищем только Excel файлы
         filenames = [x for x in filenames if not os.path.split(x)[1].startswith('~')]  # Убираем файлы начинающиеся с '~'
     return filenames
