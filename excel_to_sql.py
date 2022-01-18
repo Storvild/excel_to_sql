@@ -270,12 +270,34 @@ def to_sql_file(filename: str,
     return True
 
 
+def user_input():
+    """ Ввод данных пользователем """
+    global SHEET_NAME, START_ROWNUM, EMPTY_BREAK_COL
+    SHEET_NAME = input('Введите Имя листа (Пусто - первый лист). По умолчанию "{}": '.format(SHEET_NAME)) or SHEET_NAME
+    START_ROWNUM = int(input('Начинать со строки {}: '.format(START_ROWNUM)) or START_ROWNUM)
+    EMPTY_BREAK_COL = input('Введите букву столбца, пустое значение которого прервет обработку. (Пробел - не прерывать). По умолчанию "{}": '.format(EMPTY_BREAK_COL)) or EMPTY_BREAK_COL
+    EMPTY_BREAK_COL = EMPTY_BREAK_COL.strip()  # Если передан пробел, убрать его
+    print()
+    answer = input('Имя листа: {}\n'
+                   'Начинать со строки: {}\n'
+                   'Прерывать обработку если в столбце "{}" пусто\n'
+                   'Все верно?'.format(SHEET_NAME, START_ROWNUM, EMPTY_BREAK_COL))
+    if answer:
+        exit('Обработка прервана')
+
+
 def main():
     filenames = get_filenames()
+    print('Будут обработаны следующие файлы:')
+    for filename in filenames:
+        print('    {}'.format(filename))
+    print()
+    user_input()
 
     if filenames:
         for filename in filenames:
-            outfile = os.path.splitext(filename)[0] + '.sql'
+            #outfile = os.path.splitext(filename)[0] + '.sql'
+            outfile = filename + '_.sql'
             data_list = get_data(filename, COLUMNS, START_ROWNUM, sheet_name='')
             to_sql_file(outfile, data_list, columns=COLUMNS, ext_columns=EXT_COLUMNS, setzero=True, tablename='tablename')
             print('Результирующий файл записан: {}'.format(outfile))
