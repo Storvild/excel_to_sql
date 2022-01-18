@@ -66,6 +66,13 @@ WORKDIR = os.path.join(curdir, '')
 list_files = glob.glob(os.path.join(WORKDIR, '*.*'))
 
 
+def end_of_the_month(indate: datetime.datetime):
+    import calendar
+    days = calendar.monthrange(indate.year, indate.month)[1]
+    res = indate.replace(day=days)
+    return res
+
+
 def get_filenames(workdir=WORKDIR):
     """ Получение списка файлов
         Список файлов можно передать в виде параметров скрипта
