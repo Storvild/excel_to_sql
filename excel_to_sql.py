@@ -48,38 +48,38 @@ ADD_NN = True         # Добавлять в результат номер ст
 ADD_FILENAME = True   # Добавлять в результат имя файла
 
 COLUMNS = [
-    # {'fieldname': 'a', 'colname': 'A', 'datatype': 'varchar'},
-    # {'fieldname': 'b', 'colname': 'B', 'datatype': 'varchar'},
+    {'fieldname': 'a', 'colname': 'A', 'datatype': 'varchar'},
+    {'fieldname': 'b', 'colname': 'B', 'datatype': 'varchar'},
     {'fieldname': 'c', 'colname': 'C', 'datatype': 'varchar'},
-    # {'fieldname': 'd', 'colname': 'D', 'datatype': 'varchar'},
-    # {'fieldname': 'e', 'colname': 'E', 'datatype': 'varchar'},
+    {'fieldname': 'd', 'colname': 'D', 'datatype': 'varchar'},
+    {'fieldname': 'e', 'colname': 'E', 'datatype': 'varchar'},
     {'fieldname': 'f', 'colname': 'F', 'datatype': 'varchar'},
     {'fieldname': 'g', 'colname': 'G', 'datatype': 'varchar'},
     {'fieldname': 'h', 'colname': 'H', 'datatype': 'varchar'},
-    # {'fieldname': 'i', 'colname': 'I', 'datatype': 'varchar'},
-    # {'fieldname': 'j', 'colname': 'J', 'datatype': 'varchar'},
+    {'fieldname': 'i', 'colname': 'I', 'datatype': 'varchar'},
+    {'fieldname': 'j', 'colname': 'J', 'datatype': 'varchar'},
     {'fieldname': 'k', 'colname': 'K', 'datatype': 'varchar'},
     {'fieldname': 'l', 'colname': 'L', 'datatype': 'varchar'},
     {'fieldname': 'm', 'colname': 'M', 'datatype': 'varchar'},
     {'fieldname': 'n', 'colname': 'N', 'datatype': 'varchar'},
-    # {'fieldname': 'o', 'colname': 'O', 'datatype': 'varchar'},
-    # {'fieldname': 'p', 'colname': 'P', 'datatype': 'varchar'},
-    # {'fieldname': 'q', 'colname': 'Q', 'datatype': 'varchar'},
-    # {'fieldname': 'r', 'colname': 'R', 'datatype': 'varchar'},
-    # {'fieldname': 's', 'colname': 'S', 'datatype': 'varchar'},
-    # {'fieldname': 't', 'colname': 'T', 'datatype': 'varchar'},
-    # {'fieldname': 'u', 'colname': 'U', 'datatype': 'varchar'},
-    # {'fieldname': 'v', 'colname': 'V', 'datatype': 'varchar'},
-    # {'fieldname': 'w', 'colname': 'W', 'datatype': 'varchar'},
-    # {'fieldname': 'x', 'colname': 'X', 'datatype': 'varchar'},
-    # {'fieldname': 'y', 'colname': 'Y', 'datatype': 'varchar'},
-    # {'fieldname': 'z', 'colname': 'Z', 'datatype': 'varchar'},
-    # {'fieldname': 'aa', 'colname': 'AA', 'datatype': 'varchar'},
-    # {'fieldname': 'ab', 'colname': 'AB', 'datatype': 'varchar'},
-    # {'fieldname': 'ac', 'colname': 'AC', 'datatype': 'varchar'},
-    # {'fieldname': 'ad', 'colname': 'AD', 'datatype': 'varchar'},
-    # {'fieldname': 'ae', 'colname': 'AE', 'datatype': 'varchar'},
-    # {'fieldname': 'af', 'colname': 'AF', 'datatype': 'varchar'},
+    {'fieldname': 'o', 'colname': 'O', 'datatype': 'varchar'},
+    {'fieldname': 'p', 'colname': 'P', 'datatype': 'varchar'},
+    {'fieldname': 'q', 'colname': 'Q', 'datatype': 'varchar'},
+    {'fieldname': 'r', 'colname': 'R', 'datatype': 'varchar'},
+    {'fieldname': 's', 'colname': 'S', 'datatype': 'varchar'},
+    {'fieldname': 't', 'colname': 'T', 'datatype': 'varchar'},
+    {'fieldname': 'u', 'colname': 'U', 'datatype': 'varchar'},
+    {'fieldname': 'v', 'colname': 'V', 'datatype': 'varchar'},
+    {'fieldname': 'w', 'colname': 'W', 'datatype': 'varchar'},
+    {'fieldname': 'x', 'colname': 'X', 'datatype': 'varchar'},
+    {'fieldname': 'y', 'colname': 'Y', 'datatype': 'varchar'},
+    {'fieldname': 'z', 'colname': 'Z', 'datatype': 'varchar'},
+    {'fieldname': 'aa', 'colname': 'AA', 'datatype': 'varchar'},
+    {'fieldname': 'ab', 'colname': 'AB', 'datatype': 'varchar'},
+    {'fieldname': 'ac', 'colname': 'AC', 'datatype': 'varchar'},
+    {'fieldname': 'ad', 'colname': 'AD', 'datatype': 'varchar'},
+    {'fieldname': 'ae', 'colname': 'AE', 'datatype': 'varchar'},
+    {'fieldname': 'af', 'colname': 'AF', 'datatype': 'varchar'},
 
 
 ]
@@ -351,9 +351,11 @@ if __name__ == '__main__':
 # History
 # v1.000
 #   Добавлен пользовательский ввод user_input
+#   Можно в параметрах скрипта передавать имена файлов
 # v1.001
 #   Расширен список столбцов по умолчанию до с H до AF
 #   Переименовано поле row_num в nn
 #   Добавлены переменные ADD_NN ADD_FILENAME Добавлять ли в результат номер строки и имя файла
 # v1.003
-#   Добавлены
+#   Имя файла формируется с оригинальным расширением + .sql
+#   Проведено слияние версий
