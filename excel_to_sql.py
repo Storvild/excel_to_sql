@@ -1,4 +1,5 @@
 """
+v1.003
 Создание SQL скрипта из содержимого файла Excel
     Скрипт использует модуль pyexcel. Установка:
         pip install pyexcel
@@ -9,6 +10,7 @@
         python import_excel.py "Путь к файлу 1.xlsx"
 
   Если выполнить скрипт без параметров, то будут обработаны все файлы .xls, .xlsx, .ods находящиеся в папке скрипта
+  Если в параметрах указаны имена файлов через пробел, то обрабатываются только они
 
   Для подготовки скрипта, необходимо заполнить COLUMNS, где указать все поля из которых будут браться значения
   В каждом поле необходимо заполнить имя поля в БД, Имя столбца Excel, а также тип в БД
@@ -28,7 +30,7 @@
     {'fieldname': 'creator', 'fieldvalue': 8482, 'comment': 'ФИО'},
     {'fieldname': 'todate', 'fieldvalue': "date'2021-10-31'", 'comment': ''},
   ]
-
+  # Внимание!!! Данные с учетом фильтра работают только в .xlsx. В .xls и .ods будут отображаться все данные
 """
 
 import os
@@ -38,19 +40,46 @@ import datetime
 import string
 import sys
 
-SHEET_NAME = ''        # Имя листа Excel, '' - использовать первый лист
-START_ROWNUM = 2      # Обрабатывать с 2-й строки
-EMPTY_BREAK_COL = 'A'  # Прерывать обработку до первого пустого значения в указанной колонке. Если передано '', то до конца
+SHEET_NAME = ''       # Имя листа Excel, '' - использовать первый лист
+START_ROWNUM = 12      # Обрабатывать с 12-й строки
+EMPTY_BREAK_COL = 'A' # Прерывать обработку до первого пустого значения в указанной колонке. Если передано '', то до конца
+
+ADD_NN = True         # Добавлять в результат номер строки
+ADD_FILENAME = True   # Добавлять в результат имя файла
 
 COLUMNS = [
-    {'fieldname': 'a', 'colname': 'A', 'datatype': 'varchar'},
-    {'fieldname': 'b', 'colname': 'B', 'datatype': 'varchar'},
+    # {'fieldname': 'a', 'colname': 'A', 'datatype': 'varchar'},
+    # {'fieldname': 'b', 'colname': 'B', 'datatype': 'varchar'},
     {'fieldname': 'c', 'colname': 'C', 'datatype': 'varchar'},
-    {'fieldname': 'd', 'colname': 'D', 'datatype': 'varchar'},
-    {'fieldname': 'e', 'colname': 'E', 'datatype': 'varchar'},
+    # {'fieldname': 'd', 'colname': 'D', 'datatype': 'varchar'},
+    # {'fieldname': 'e', 'colname': 'E', 'datatype': 'varchar'},
     {'fieldname': 'f', 'colname': 'F', 'datatype': 'varchar'},
     {'fieldname': 'g', 'colname': 'G', 'datatype': 'varchar'},
     {'fieldname': 'h', 'colname': 'H', 'datatype': 'varchar'},
+    # {'fieldname': 'i', 'colname': 'I', 'datatype': 'varchar'},
+    # {'fieldname': 'j', 'colname': 'J', 'datatype': 'varchar'},
+    {'fieldname': 'k', 'colname': 'K', 'datatype': 'varchar'},
+    {'fieldname': 'l', 'colname': 'L', 'datatype': 'varchar'},
+    {'fieldname': 'm', 'colname': 'M', 'datatype': 'varchar'},
+    {'fieldname': 'n', 'colname': 'N', 'datatype': 'varchar'},
+    # {'fieldname': 'o', 'colname': 'O', 'datatype': 'varchar'},
+    # {'fieldname': 'p', 'colname': 'P', 'datatype': 'varchar'},
+    # {'fieldname': 'q', 'colname': 'Q', 'datatype': 'varchar'},
+    # {'fieldname': 'r', 'colname': 'R', 'datatype': 'varchar'},
+    # {'fieldname': 's', 'colname': 'S', 'datatype': 'varchar'},
+    # {'fieldname': 't', 'colname': 'T', 'datatype': 'varchar'},
+    # {'fieldname': 'u', 'colname': 'U', 'datatype': 'varchar'},
+    # {'fieldname': 'v', 'colname': 'V', 'datatype': 'varchar'},
+    # {'fieldname': 'w', 'colname': 'W', 'datatype': 'varchar'},
+    # {'fieldname': 'x', 'colname': 'X', 'datatype': 'varchar'},
+    # {'fieldname': 'y', 'colname': 'Y', 'datatype': 'varchar'},
+    # {'fieldname': 'z', 'colname': 'Z', 'datatype': 'varchar'},
+    # {'fieldname': 'aa', 'colname': 'AA', 'datatype': 'varchar'},
+    # {'fieldname': 'ab', 'colname': 'AB', 'datatype': 'varchar'},
+    # {'fieldname': 'ac', 'colname': 'AC', 'datatype': 'varchar'},
+    # {'fieldname': 'ad', 'colname': 'AD', 'datatype': 'varchar'},
+    # {'fieldname': 'ae', 'colname': 'AE', 'datatype': 'varchar'},
+    # {'fieldname': 'af', 'colname': 'AF', 'datatype': 'varchar'},
 
 
 ]
@@ -119,13 +148,16 @@ def get_data(filepath: str, columns: list, start_rownum: int, sheet_name=SHEET_N
                 if empty_break_col:
                     if str(sheet['{}{}'.format(empty_break_col, rownum)]).strip() == '':
                         break
-                rec['row_num'] = rownum
+                if ADD_NN:
+                    rec['nn'] = rownum
                 for column in columns:
                     #print(column['fieldname'], column['colname'])
                     try:
                         rec[column['fieldname']] = sheet['{}{}'.format(column['colname'], rownum)]
                     except:
                         pass
+                if ADD_FILENAME:
+                    rec['filename'] = filename
                 res.append(rec)
     finally:
         pyexcel.free_resources()
@@ -147,6 +179,7 @@ def get_datatype(fieldname: str, columns: list, fieldvalue: str) -> str:
     else:
         res = 'varchar'
     return res
+
 
 def to_sql_file(filename: str,
                 data_list: list,
@@ -190,8 +223,8 @@ def to_sql_file(filename: str,
                     line += '{}'.format(rec[field])
                 elif type(rec[field]) == bool:
                     line += 'True' if rec[field] else 'False'
-                #elif type(rec[field]) in (int, float):
-                #    line += '{}'.format(rec[field])
+                # elif type(rec[field]) in (int, float):
+                #     line += '{}'.format(rec[field])
                 else:
                     line += "'{}'".format(rec[field])
             line += ')'
@@ -215,13 +248,14 @@ def to_sql_file(filename: str,
         else:
             content += '\n\n/*\nINSERT INTO {} ('.format(tablename)
             i = 0
-            for field in ext_columns:  # Доп.поля из EXT_COLUMNS
-                line = '\n    '
-                if i > 0:
-                    line += ', '
-                line += '{}'.format(field['fieldname'])
-                content += line
-                i += 1
+            if ext_columns:
+                for field in ext_columns:  # Доп.поля из EXT_COLUMNS
+                    line = '\n    '
+                    if i > 0:
+                        line += ', '
+                    line += '{}'.format(field['fieldname'])
+                    content += line
+                    i += 1
             if data_list:
                 for field in data_list[0]:  # Поля из первой полученной записи data_list
                     line = '\n    '
@@ -266,9 +300,7 @@ def to_sql_file(filename: str,
             content += '\n'
         # Запись результата в файл
         fw.write(content)
-
     return True
-
 
 def user_input():
     """ Ввод данных пользователем """
@@ -288,6 +320,7 @@ def user_input():
 
 def main():
     filenames = get_filenames()
+
     print('Будут обработаны следующие файлы:')
     for filename in filenames:
         print('    {}'.format(filename))
@@ -297,7 +330,7 @@ def main():
     if filenames:
         for filename in filenames:
             #outfile = os.path.splitext(filename)[0] + '.sql'
-            outfile = filename + '_.sql'
+            outfile = filename + '.sql'
             data_list = get_data(filename, COLUMNS, START_ROWNUM, sheet_name='')
             to_sql_file(outfile, data_list, columns=COLUMNS, ext_columns=EXT_COLUMNS, setzero=True, tablename='tablename')
             print('Результирующий файл записан: {}'.format(outfile))
@@ -307,3 +340,20 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+# requirements.txt:
+# numpy==1.23.5
+# tabula==1.0.5
+# pandas==1.5.2
+# python-dateutil==2.8.2
+# pytz==2022.6
+
+# History
+# v1.000
+#   Добавлен пользовательский ввод user_input
+# v1.001
+#   Расширен список столбцов по умолчанию до с H до AF
+#   Переименовано поле row_num в nn
+#   Добавлены переменные ADD_NN ADD_FILENAME Добавлять ли в результат номер строки и имя файла
+# v1.003
+#   Добавлены
