@@ -1,5 +1,5 @@
 """
-v1.003
+v1.004
 Создание SQL скрипта из содержимого файла Excel
     Скрипт использует модуль pyexcel. Установка:
         pip install pyexcel
@@ -41,11 +41,12 @@ import string
 import sys
 
 SHEET_NAME = ''       # Имя листа Excel, '' - использовать первый лист
-START_ROWNUM = 12      # Обрабатывать с 12-й строки
+START_ROWNUM = 5      # Обрабатывать с 12-й строки
 EMPTY_BREAK_COL = 'A' # Прерывать обработку до первого пустого значения в указанной колонке. Если передано '', то до конца
 
 ADD_NN = True         # Добавлять в результат номер строки
 ADD_FILENAME = True   # Добавлять в результат имя файла
+MERGE_ONE_FILE = False # Объединить в один файл
 
 COLUMNS = [
     {'fieldname': 'a', 'colname': 'A', 'datatype': 'varchar'},
@@ -304,16 +305,20 @@ def to_sql_file(filename: str,
 
 def user_input():
     """ Ввод данных пользователем """
-    global SHEET_NAME, START_ROWNUM, EMPTY_BREAK_COL
+    global SHEET_NAME, START_ROWNUM, EMPTY_BREAK_COL, MERGE_ONE_FILE
     SHEET_NAME = input('Введите Имя листа (Пусто - первый лист). По умолчанию "{}": '.format(SHEET_NAME)) or SHEET_NAME
     START_ROWNUM = int(input('Начинать со строки {}: '.format(START_ROWNUM)) or START_ROWNUM)
     EMPTY_BREAK_COL = input('Введите букву столбца, пустое значение которого прервет обработку. (Пробел - не прерывать). По умолчанию "{}": '.format(EMPTY_BREAK_COL)) or EMPTY_BREAK_COL
     EMPTY_BREAK_COL = EMPTY_BREAK_COL.strip()  # Если передан пробел, убрать его
+    merge_one_file_ = input('Объединить в один файл? ({}): '.format('Да' if MERGE_ONE_FILE else 'Нет'))
+    if merge_one_file_.strip() != '':
+        MERGE_ONE_FILE = merge_one_file_.strip().lower() in ('да', 'yes', 'д', 'y', '1', 'true')
     print()
     answer = input('Имя листа: {}\n'
                    'Начинать со строки: {}\n'
                    'Прерывать обработку если в столбце "{}" пусто\n'
-                   'Все верно?'.format(SHEET_NAME, START_ROWNUM, EMPTY_BREAK_COL))
+                   'Объединять в один файл: {}\n'
+                   'Все верно?'.format(SHEET_NAME, START_ROWNUM, EMPTY_BREAK_COL, ('Да' if MERGE_ONE_FILE else 'Нет')))
     if answer:
         exit('Обработка прервана')
 
@@ -328,12 +333,22 @@ def main():
     user_input()
 
     if filenames:
-        for filename in filenames:
-            #outfile = os.path.splitext(filename)[0] + '.sql'
-            outfile = filename + '.sql'
-            data_list = get_data(filename, COLUMNS, START_ROWNUM, sheet_name='')
-            to_sql_file(outfile, data_list, columns=COLUMNS, ext_columns=EXT_COLUMNS, setzero=True, tablename='tablename')
-            print('Результирующий файл записан: {}'.format(outfile))
+        if MERGE_ONE_FILE:
+            data_list = []
+            for filename in filenames:
+                data_ = get_data(filename, COLUMNS, START_ROWNUM, sheet_name='')
+                data_list.extend(data_)
+                print('Обработан файл: {}'.format(filename))
+            outfile = 'RESULT_ALL.sql'
+            to_sql_file(outfile, data_list, columns=COLUMNS, ext_columns=EXT_COLUMNS, setzero=True,
+                        tablename='tablename')
+        else:
+            for filename in filenames:
+                #outfile = os.path.splitext(filename)[0] + '.sql'
+                outfile = filename + '.sql'
+                data_list = get_data(filename, COLUMNS, START_ROWNUM, sheet_name='')
+                to_sql_file(outfile, data_list, columns=COLUMNS, ext_columns=EXT_COLUMNS, setzero=True, tablename='tablename')
+                print('Результирующий файл записан: {}'.format(outfile))
         print('Обработка успешно завершена')
         # input()
 
@@ -359,3 +374,5 @@ if __name__ == '__main__':
 # v1.003
 #   Имя файла формируется с оригинальным расширением + .sql
 #   Проведено слияние версий
+# v1.004
+#   Объединение данных в один файл sql
