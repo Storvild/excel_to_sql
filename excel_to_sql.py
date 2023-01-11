@@ -40,12 +40,12 @@ import datetime
 import string
 import sys
 
-SHEET_NAME = ''       # Имя листа Excel, '' - использовать первый лист
-START_ROWNUM = 5      # Обрабатывать с 12-й строки
-EMPTY_BREAK_COL = 'A' # Прерывать обработку до первого пустого значения в указанной колонке. Если передано '', то до конца
+SHEET_NAME = ''        # Имя листа Excel, '' - использовать первый лист
+START_ROWNUM = 5       # Обрабатывать с 12-й строки
+EMPTY_BREAK_COL = 'A'  # Прерывать обработку до первого пустого значения в указанной колонке. Если передано '', то до конца
 
-ADD_NN = True         # Добавлять в результат номер строки
-ADD_FILENAME = True   # Добавлять в результат имя файла
+ADD_NN = True          # Добавлять в результат номер строки
+ADD_FILENAME = True    # Добавлять в результат имя файла
 MERGE_ONE_FILE = False # Объединить в один файл
 
 COLUMNS = [
@@ -90,10 +90,7 @@ EXT_COLUMNS = [
 ]
 
 curdir = os.path.abspath(os.path.dirname(__file__))
-print('Рабочая директория: ', curdir)
 WORKDIR = os.path.join(curdir, '')
-
-list_files = glob.glob(os.path.join(WORKDIR, '*.*'))
 
 
 def end_of_the_month(indate: datetime.datetime):
@@ -324,6 +321,9 @@ def user_input():
 
 
 def main():
+    print('Рабочая директория: ', WORKDIR)
+    
+    # filenames = glob.glob(os.path.join(WORKDIR, '*.*'))
     filenames = get_filenames()
 
     print('Будут обработаны следующие файлы:')
