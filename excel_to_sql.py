@@ -1,5 +1,5 @@
 """
-v1.004
+v1.005
 Создание SQL скрипта из содержимого файла Excel
     Скрипт использует модуль pyexcel. Установка:
         pip install pyexcel
@@ -44,7 +44,7 @@ SHEET_NAME = ''        # Имя листа Excel, '' - использовать 
 START_ROWNUM = 5       # Обрабатывать с 12-й строки
 EMPTY_BREAK_COL = 'A'  # Прерывать обработку до первого пустого значения в указанной колонке. Если передано '', то до конца
 
-ADD_NN = True          # Добавлять в результат номер строки
+ADD_ROWNUM = True      # Добавлять в результат номер строки
 ADD_FILENAME = True    # Добавлять в результат имя файла
 MERGE_ONE_FILE = False # Объединить в один файл
 
@@ -146,8 +146,8 @@ def get_data(filepath: str, columns: list, start_rownum: int, sheet_name=SHEET_N
                 if empty_break_col:
                     if str(sheet['{}{}'.format(empty_break_col, rownum)]).strip() == '':
                         break
-                if ADD_NN:
-                    rec['nn'] = rownum
+                if ADD_ROWNUM:
+                    rec['rownum'] = rownum
                 for column in columns:
                     #print(column['fieldname'], column['colname'])
                     try:
@@ -376,3 +376,5 @@ if __name__ == '__main__':
 #   Проведено слияние версий
 # v1.004
 #   Объединение данных в один файл sql
+# v1.005
+#   Переименован параметр ADD_NN в ADD_ROWNUM
