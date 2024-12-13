@@ -1,11 +1,13 @@
 """
-v1.005
+v1.007
 Создание SQL скрипта из содержимого файла Excel
     Скрипт использует модуль pyexcel. Установка:
-        pip install pyexcel
-        pip install pyexcel-xls
-        pip install pyexcel-xlsx
-        pip install pyexcel-ods
+        pip install pyexcel==0.7.0
+        pip install pyexcel-io==0.6.6
+        pip install pyexcel-ods==0.6.0
+        pip install pyexcel-xls==0.7.0
+        pip install pyexcel-xlsx==0.6.0
+        pip install openpyxl==3.0.10
     Использование:
         python import_excel.py "Путь к файлу 1.xlsx"
 
@@ -30,11 +32,6 @@ v1.005
     {'fieldname': 'creator', 'fieldvalue': 8482, 'comment': 'ФИО'},
     {'fieldname': 'todate', 'fieldvalue': "date'2021-10-31'", 'comment': ''},
   ]
-  ADD_ROWNUM - Добавлять в результат значение номера строки "rownum" в пределах файла.
-               Внимание! Если обрабатываются несколько файлов, то в итоговых данных значения rownum могут повторяться
-  ADD_FILENAME - Добавлять в результат имя файла
-  MERGE_ONE_FILE - Объединять результаты обработки нескольких файлов в один результирующий sql файл
-
   # Внимание!!! Данные с учетом фильтра работают только в .xlsx. В .xls и .ods будут отображаться все данные
 """
 
@@ -44,13 +41,17 @@ import pyexcel
 import datetime
 import string
 import sys
+import xmltodict
 
-SHEET_NAME = ''        # Имя листа Excel, '' - использовать первый лист
-START_ROWNUM = 5       # Обрабатывать с 12-й строки
+print(sys.version)
+
+SHEET_NAME = '*'       # Имя листа Excel, '' - использовать первый лист, '*' - использовать все листы
+START_ROWNUM = 6       # Обрабатывать с 12-й строки
 EMPTY_BREAK_COL = 'A'  # Прерывать обработку до первого пустого значения в указанной колонке. Если передано '', то до конца
 
-ADD_ROWNUM = True      # Добавлять в результат номер строки (в пределах файла)
+ADD_NN = True          # Добавлять в результат номер строки
 ADD_FILENAME = True    # Добавлять в результат имя файла
+ADD_SHEETNAME = True   # Добавлять в результат имя листа
 MERGE_ONE_FILE = False # Объединить в один файл
 
 COLUMNS = [
@@ -124,7 +125,79 @@ def get_filenames(workdir=WORKDIR):
     return filenames
 
 
-def get_data(filepath: str, columns: list, start_rownum: int, sheet_name=SHEET_NAME, empty_break_col=EMPTY_BREAK_COL) -> list:
+def get_colnum_from_colname(inname):
+    """ Получение номера столбца по имени Excel
+        get_colnum_from_colname('z') == 26
+    """
+    res = 0
+    inname = inname.upper()
+    for idx, letter in enumerate(inname[::-1]):
+        res += (26**idx)*(string.ascii_uppercase.find(letter) + 1)
+    return res
+
+def get_from_xml_xls(content: str, sheet_name: str, columns: list, start_rownum: int, filename: str, empty_break_col: str) -> list:
+    js = xmltodict.parse(content)
+    #print(js)
+    if isinstance(js['Workbook']['Worksheet'], list):
+        if sheet_name == '*':
+            worksheets = js['Workbook']['Worksheet']
+        elif sheet_name == '':
+            worksheets = js['Workbook']['Worksheet'][0]
+        else:
+            worksheets = [x for x in js['Workbook']['Worksheet'] if x['@ss:Name'] in sheet_name.split(',')]
+
+    else:
+        worksheets = [js['Workbook']['Worksheet']]
+    res = []
+    for worksheet in worksheets:
+        sheetname = worksheet['@ss:Name']
+        try:
+            rows = worksheet['Table']['Row']
+            if isinstance(rows, dict):
+                rows = [rows]
+            for rownum, row in enumerate(rows, 1):
+                if start_rownum > rownum:
+                    continue
+                rec = {}
+                if ADD_NN:
+                    rec['nn'] = rownum
+
+                if 'Cell' in row:
+                    cols = row['Cell']
+                    if isinstance(cols, dict):
+                        cols = [cols]
+
+                    # Выход если указана колонка с пустым значением для выхода
+                    if empty_break_col:
+                        val = None
+                        colidx = get_colnum_from_colname(empty_break_col) - 1
+                        if colidx <= len(cols) - 1:
+                            if 'Data' in cols[colidx] and '#text' in cols[colidx]['Data']:
+                                val = cols[colidx]['Data']['#text']
+                        if not val:
+                            break
+
+                    for column in columns:
+                        colname = column['colname']
+                        colidx = get_colnum_from_colname(colname) - 1
+                        val = None
+                        if colidx <= len(cols)-1:
+                            if 'Data' in cols[colidx] and '#text' in cols[colidx]['Data']:
+                                val = cols[colidx]['Data']['#text']
+                        rec[column['fieldname']] = val
+
+                    if ADD_FILENAME:
+                        rec['filename'] = filename
+                    if ADD_SHEETNAME:
+                        rec['sheetname'] = sheetname
+                    res.append(rec)
+        except:
+            pass
+    return res
+
+
+
+def get_data(filepath: str, columns: list, start_rownum: int, sheet_name: str = SHEET_NAME, empty_break_col = EMPTY_BREAK_COL) -> list:
     """
 
     :param filepath: Путь к файлу Exceld
@@ -140,28 +213,57 @@ def get_data(filepath: str, columns: list, start_rownum: int, sheet_name=SHEET_N
         fileext: str = os.path.splitext(filepath)[1]
         filename: str = os.path.split(filepath)[-1]
         if fileext in ('.ods', '.xls', '.xlsx') and not filename.startswith('~'):
-            print('Обработка файла:', filepath)
-            sheet = pyexcel.get_sheet(file_name=filepath, sheet_name=sheet_name)
-            first_column = sheet.column[0]
+            try:
+                # Попытка прочитать файл как XML-Excel
+                with open(filename, 'r', encoding='utf-8') as f:  # Ошибка при открытии бинарного файла
+                    print('Обработка файла:', filepath)
+                    fcont = f.read(5)
+                    if fcont[:5] == '<?xml':
+                        f.seek(0)
+                        fcont = f.read()
+                        return get_from_xml_xls(fcont, sheet_name, columns, start_rownum, filename, empty_break_col)
+            except:
+                pass
 
-            for rownum in range(start_rownum, len(first_column)+1):
-                rec = {}
-                # Ищем данные до первого пустого значения в первом указанном столбце
-                # if str(sheet['{}{}'.format(columns[0]['colname'], rownum)]).strip() == '':
-                if empty_break_col:
-                    if str(sheet['{}{}'.format(empty_break_col, rownum)]).strip() == '':
-                        break
-                if ADD_ROWNUM:
-                    rec['rownum'] = rownum
-                for column in columns:
-                    #print(column['fieldname'], column['colname'])
-                    try:
-                        rec[column['fieldname']] = sheet['{}{}'.format(column['colname'], rownum)]
-                    except:
-                        pass
-                if ADD_FILENAME:
-                    rec['filename'] = filename
-                res.append(rec)
+            #sheet = pyexcel.get_sheet(file_name=filepath, sheet_name=sheet_name)
+            book = pyexcel.get_book(file_name=filepath)
+
+            if sheet_name == '*':
+                sheet_names = book.sheet_names()
+            elif sheet_name == '':
+                sheet_names = [book.sheet_names()[0]]
+            else:
+                sheet_names = sheet_name.split(',')
+
+            for sheet_name in sheet_names:
+                try:
+                    sheet = book[sheet_name]
+                except:
+                    print(f'  Ошибка!!! Не удалось получить лист с именем "{sheet_name}"')
+                    continue
+                print(f'  Обработка Листа "{sheet_name}"')
+                first_column = sheet.column[0]
+
+                for rownum in range(start_rownum, len(first_column)+1):
+                    rec = {}
+                    # Ищем данные до первого пустого значения в первом указанном столбце
+                    # if str(sheet['{}{}'.format(columns[0]['colname'], rownum)]).strip() == '':
+                    if empty_break_col:
+                        if str(sheet['{}{}'.format(empty_break_col, rownum)]).strip() == '':
+                            break
+                    if ADD_NN:
+                        rec['nn'] = rownum
+                    for column in columns:
+                        #print(column['fieldname'], column['colname'])
+                        try:
+                            rec[column['fieldname']] = sheet['{}{}'.format(column['colname'], rownum)]
+                        except:
+                            pass
+                    if ADD_FILENAME:
+                        rec['filename'] = filename
+                    if ADD_SHEETNAME and sheet_name:
+                        rec['sheetname'] = sheet_name
+                    res.append(rec)
     finally:
         pyexcel.free_resources()
     return res
@@ -341,9 +443,9 @@ def main():
         if MERGE_ONE_FILE:
             data_list = []
             for filename in filenames:
-                data_ = get_data(filename, COLUMNS, START_ROWNUM, sheet_name='')
+                data_ = get_data(filename, COLUMNS, START_ROWNUM, sheet_name=SHEET_NAME)
                 data_list.extend(data_)
-                print('Обработан файл: {}'.format(filename))
+                # print('Обработан файл: {}'.format(filename))
             outfile = 'RESULT_ALL.sql'
             to_sql_file(outfile, data_list, columns=COLUMNS, ext_columns=EXT_COLUMNS, setzero=True,
                         tablename='tablename')
@@ -351,7 +453,7 @@ def main():
             for filename in filenames:
                 #outfile = os.path.splitext(filename)[0] + '.sql'
                 outfile = filename + '.sql'
-                data_list = get_data(filename, COLUMNS, START_ROWNUM, sheet_name='')
+                data_list = get_data(filename, COLUMNS, START_ROWNUM, sheet_name=SHEET_NAME)
                 to_sql_file(outfile, data_list, columns=COLUMNS, ext_columns=EXT_COLUMNS, setzero=True, tablename='tablename')
                 print('Результирующий файл записан: {}'.format(outfile))
         print('Обработка успешно завершена')
@@ -382,4 +484,9 @@ if __name__ == '__main__':
 # v1.004
 #   Объединение данных в один файл sql
 # v1.005
-#   Переименован параметр ADD_NN в ADD_ROWNUM
+#   Исправлена работа в Python 3.11 (необходимо использовать библиотеку openpyxl==3.0.10)
+# v1.006
+#   Добавлена обработка всех листов файла SHEET_NAME='*' и возможность писать имена листов через запятую
+#   Добавлен параметр ADD_SHEETNAME добавлять ли в результат имя листа
+# v1.007
+#   Добавлена обработка файлов XML Excel 2003
